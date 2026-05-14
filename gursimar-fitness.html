@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Gursimar's Fit Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080808;
+    --bg2: #101010;
+    --bg3: #141414;
+    --border: #1e1e1e;
+    --border2: #252525;
+    --text: #f0ece4;
+    --muted: #555;
+    --dim: #333;
+    --purple: #9b59b6;
+    --orange: #f4a261;
+    --red: #e76f51;
+    --blue: #457b9d;
+    --green: #2d6a4f;
+    --dark-red: #9b2226;
+    --violet: #6d3a9c;
+    --font-head: 'Cormorant Garamond', serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-head);
+    max-width: 500px;
+    margin: 0 auto;
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 99;
+    background: linear-gradient(170deg, #100520 0%, #080808 85%);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 20px 0;
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .header h1 {
+    font-size: 22px;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+  }
+
+  .streak-badge {
+    text-align: center;
+    background: #9b59b618;
+    border: 1px solid #9b59b630;
+    border-radius: 14px;
+    padding: 8px 14px;
+    cursor: default;
+  }
+  .streak-badge .fire { font-size: 18px; }
+  .streak-badge .label { font-size: 10px; color: var(--purple); font-family: var(--font-mono); margin-top: 2px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .chip {
+    background: #151515; border: 1px solid #252525;
+    border-radius: 20px; padding: 3px 10px;
+    font-size: 10px; color: #777; font-family: var(--font-mono);
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-bottom: none;
+  }
+  .tab-btn {
+    flex: 1; padding: 11px 4px;
+    border: none; background: #111; color: #444;
+    font-size: 11px; font-family: var(--font-mono);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .tab-btn.active { background: var(--purple); color: #fff; }
+
+  /* ── PANELS ── */
+  .panel { display: none; padding: 14px 18px 40px; }
+  .panel.active { display: block; }
+
+  /* ── DAY SCROLLER ── */
+  .day-scroller {
+    display: flex; gap: 8px; overflow-x: auto;
+    padding: 14px 18px 8px;
+    scrollbar-width: none;
+    background: #0d0d0d;
+    margin: 0 -18px;
+  }
+  .day-scroller::-webkit-scrollbar { display: none; }
+
+  .day-pill {
+    flex-shrink: 0; min-width: 64px;
+    background: #131313; border: 1px solid #222;
+    border-radius: 12px; padding: 9px 10px;
+    cursor: pointer; text-align: center;
+    transition: all 0.2s; font-family: var(--font-mono);
+  }
+  .day-pill.active { border-color: var(--pill-color); background: var(--pill-color); }
+  .day-pill .day-num { font-size: 9px; color: #3a3a3a; letter-spacing: 1px; margin-bottom: 2px; }
+  .day-pill.active .day-num { color: rgba(255,255,255,0.7); }
+  .day-pill .day-tag { font-size: 10px; color: #555; font-weight: bold; }
+  .day-pill.active .day-tag { color: #fff; }
+  .day-pill .done-label { font-size: 9px; color: #555; margin-top: 1px; }
+  .day-pill.active .done-label { color: #fff; }
+
+  /* ── DAY CARD ── */
+  .day-card {
+    border-radius: 18px; padding: 18px; margin-bottom: 14px;
+    border: 1px solid transparent;
+  }
+  .day-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .day-card .tag-badge {
+    color: #fff; font-size: 9px; letter-spacing: 2px;
+    padding: 3px 10px; border-radius: 20px; font-family: var(--font-mono);
+  }
+  .day-card h2 { font-size: 20px; font-weight: 300; margin: 8px 0 3px; }
+  .day-card .sub { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+  .day-card .emoji { font-size: 28px; }
+
+  .warmup-box {
+    margin-top: 13px; padding: 10px 13px;
+    background: #ffffff08; border-radius: 10px;
+    border-left: 3px solid transparent;
+  }
+  .warmup-box .wlabel {
+    font-size: 9px; letter-spacing: 2px; font-family: var(--font-mono);
+    margin-bottom: 3px;
+  }
+  .warmup-box p { font-size: 12px; color: #aaa; }
+
+  /* ── EXERCISES ── */
+  .exercises { display: flex; flex-direction: column; gap: 9px; margin-bottom: 12px; }
+
+  .ex-card {
+    background: #111; border: 1px solid var(--border);
+    border-radius: 13px; padding: 13px 15px;
+    cursor: pointer; transition: all 0.18s;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .ex-card.done { opacity: 0.7; }
+  .ex-card-left { flex: 1; }
+  .ex-card-row { display: flex; align-items: center; gap: 10px; }
+
+  .check-circle {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 2px solid #333; background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; color: #fff; flex-shrink: 0;
+    transition: all 0.18s; font-family: var(--font-mono);
+  }
+  .check-circle.checked { border-color: transparent; }
+
+  .ex-name { font-size: 14px; transition: all 0.18s; }
+  .ex-card.done .ex-name { color: #555; text-decoration: line-through; }
+  .ex-tip { font-size: 11px; color: #484848; margin: 5px 0 0 30px; font-family: var(--font-mono); }
+
+  .ex-meta { text-align: right; flex-shrink: 0; margin-left: 10px; }
+  .ex-sets { font-size: 13px; font-weight: bold; font-family: var(--font-mono); }
+  .ex-reps { font-size: 10px; color: #666; font-family: var(--font-mono); }
+
+  /* cooldown */
+  .cooldown-box {
+    padding: 12px 14px; background: #111;
+    border: 1px solid var(--border); border-radius: 13px;
+    border-left: 3px solid var(--green);
+  }
+  .cooldown-box .clabel {
+    font-size: 9px; color: var(--green); letter-spacing: 2px;
+    font-family: var(--font-mono); margin-bottom: 3px;
+  }
+  .cooldown-box p { font-size: 12px; color: #888; }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-size: 9px; letter-spacing: 3px; color: #3a3a3a;
+    font-family: var(--font-mono); margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  /* ── NUTRITION ── */
+  .calorie-card {
+    background: linear-gradient(135deg, #9b59b61a, #131313);
+    border: 1px solid #9b59b62e; border-radius: 18px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .calorie-card .big-num { font-size: 32px; letter-spacing: -1px; margin-bottom: 2px; }
+  .calorie-card .sub { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+  .calorie-card .note { font-size: 12px; color: #444; margin-top: 10px; line-height: 1.8; }
+
+  .macros { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .macro-card {
+    background: #111; border-radius: 13px; padding: 13px 8px; text-align: center;
+  }
+  .macro-card .mv { font-size: 14px; font-weight: bold; margin-bottom: 3px; font-family: var(--font-mono); }
+  .macro-card .ml { font-size: 10px; color: #aaa; }
+  .macro-card .mn { font-size: 9px; color: #3a3a3a; margin-top: 2px; font-family: var(--font-mono); }
+
+  .tip-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .tip-card {
+    display: flex; gap: 13px; align-items: flex-start;
+    background: #111; border: 1px solid var(--border);
+    border-radius: 12px; padding: 13px 15px;
+  }
+  .tip-icon { font-size: 18px; flex-shrink: 0; }
+  .tip-title { font-size: 13px; margin-bottom: 2px; }
+  .tip-detail { font-size: 11px; color: #4a4a4a; font-family: var(--font-mono); }
+
+  .desi-box {
+    padding: 15px; background: #111; border: 1px solid var(--border);
+    border-radius: 13px; border-left: 3px solid var(--orange);
+  }
+  .desi-box .dlabel { font-size: 9px; color: var(--orange); letter-spacing: 2px; font-family: var(--font-mono); margin-bottom: 8px; }
+  .desi-box p { font-size: 12px; color: #555; line-height: 1.9; }
+  .desi-box strong { color: #888; }
+
+  /* ── PROGRESS ── */
+  .log-card {
+    background: #111; border: 1px solid var(--border);
+    border-radius: 18px; padding: 18px; margin-bottom: 20px;
+  }
+
+  .toggle-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border);
+  }
+  .toggle-label { font-size: 13px; }
+  .toggle-sub { font-size: 11px; color: #444; font-family: var(--font-mono); margin-top: 2px; }
+
+  .toggle-switch {
+    width: 46px; height: 25px; border-radius: 13px;
+    background: #252525; position: relative; cursor: pointer;
+    transition: background 0.2s; flex-shrink: 0;
+  }
+  .toggle-switch.on { background: var(--purple); }
+  .toggle-knob {
+    position: absolute; top: 3px; left: 3px;
+    width: 19px; height: 19px; border-radius: 50%;
+    background: #fff; transition: left 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  }
+  .toggle-switch.on .toggle-knob { left: 24px; }
+
+  .field-label { font-size: 11px; color: #777; font-family: var(--font-mono); margin-bottom: 7px; }
+
+  .btn-group { display: flex; gap: 7px; margin-bottom: 14px; }
+  .btn-opt {
+    flex: 1; padding: 8px 0;
+    background: #181818; border: 1px solid #252525;
+    border-radius: 10px; color: #444;
+    font-size: 11px; font-family: var(--font-mono);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-opt.sel { color: #fff; }
+
+  .meas-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .meas-item {}
+  .meas-lbl { font-size: 10px; color: #555; font-family: var(--font-mono); margin-bottom: 5px; }
+  .meas-input {
+    width: 100%; background: #181818; border-radius: 10px;
+    padding: 9px 10px; color: var(--text);
+    font-size: 14px; outline: none; font-family: var(--font-head);
+    border: 1px solid transparent; transition: border 0.2s;
+  }
+  .meas-input:focus { border-color: #333; }
+
+  .save-btn {
+    width: 100%; padding: 13px; border: none; border-radius: 12px;
+    color: #fff; font-size: 13px; letter-spacing: 1px;
+    cursor: pointer; transition: background 0.3s; font-family: var(--font-head);
+    background: var(--purple);
+  }
+  .save-btn.saved { background: var(--green); }
+
+  .chart-card {
+    background: #111; border: 1px solid var(--border);
+    border-radius: 16px; padding: 16px; margin-bottom: 14px;
+  }
+  .chart-card canvas { display: block; }
+
+  .legend { display: flex; justify-content: center; gap: 16px; margin-top: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #666; font-family: var(--font-mono); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .history-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+  .history-dot {
+    padding: 5px 11px; border-radius: 9px;
+    font-size: 10px; font-family: var(--font-mono);
+    border: 1px solid #222; background: #161616; color: #333;
+  }
+  .history-dot.done { background: #9b59b620; border-color: var(--purple); color: var(--purple); }
+
+  .empty-state {
+    text-align: center; padding: 50px 20px; color: #2e2e2e;
+  }
+  .empty-state .emo { font-size: 40px; margin-bottom: 14px; }
+  .empty-state .etitle { font-size: 15px; color: #444; margin-bottom: 6px; }
+  .empty-state .esub { font-size: 12px; color: #333; font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>Gursimar's Plan</h1>
+    </div>
+    <div class="streak-badge">
+      <div class="fire">🔥</div>
+      <div class="label" id="streakLabel">0d streak</div>
+    </div>
+  </div>
+  <div class="chips">
+    <span class="chip">60kg · 5'9"</span>
+    <span class="chip">Beginner</span>
+    <span class="chip">45 min</span>
+    <span class="chip">Bodyweight</span>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('workout')">💪 Workout</button>
+    <button class="tab-btn" onclick="switchTab('nutrition')">🥗 Nutrition</button>
+    <button class="tab-btn" onclick="switchTab('progress')">📈 Progress</button>
+  </div>
+</div>
+
+<!-- WORKOUT PANEL -->
+<div id="panel-workout" class="panel active">
+  <div class="day-scroller" id="dayScroller"></div>
+  <div id="dayContent"></div>
+</div>
+
+<!-- NUTRITION PANEL -->
+<div id="panel-nutrition" class="panel">
+  <h2 style="font-size:20px;font-weight:300;margin-bottom:4px;">Nutrition Guide</h2>
+  <p style="font-size:12px;color:#4a4a4a;margin-bottom:20px;font-family:var(--font-mono);">Gain in arms, glutes & chest · Stay lean in waist</p>
+
+  <div class="calorie-card">
+    <div class="section-label" style="color:var(--purple);">DAILY CALORIE TARGET</div>
+    <div class="big-num">1,900 – 2,100</div>
+    <div class="sub">kcal · slight surplus for lean muscle gain</div>
+    <p class="note">At 60 kg / 5'9" this surplus builds muscle in the right places without adding fat to your waist or face.</p>
+  </div>
+
+  <div class="macros">
+    <div class="macro-card" style="border:1px solid #e76f5128;">
+      <div class="mv" style="color:var(--red);">95–100g</div>
+      <div class="ml">Protein</div>
+      <div class="mn">Muscle</div>
+    </div>
+    <div class="macro-card" style="border:1px solid #f4a26128;">
+      <div class="mv" style="color:var(--orange);">220–240g</div>
+      <div class="ml">Carbs</div>
+      <div class="mn">Energy</div>
+    </div>
+    <div class="macro-card" style="border:1px solid #457b9d28;">
+      <div class="mv" style="color:var(--blue);">55–65g</div>
+      <div class="ml">Fats</div>
+      <div class="mn">Curves</div>
+    </div>
+  </div>
+
+  <div class="section-label">DAILY HABITS</div>
+  <div class="tip-list">
+    <div class="tip-card"><span class="tip-icon">🥚</span><div><div class="tip-title">90–100g protein/day</div><div class="tip-detail">Eggs, paneer, dal, Greek yogurt, chicken</div></div></div>
+    <div class="tip-card"><span class="tip-icon">🍚</span><div><div class="tip-title">Don't skip carbs</div><div class="tip-detail">Rice, roti, oats — fuel for muscle building</div></div></div>
+    <div class="tip-card"><span class="tip-icon">🥑</span><div><div class="tip-title">Add healthy fats</div><div class="tip-detail">Ghee, nuts, seeds — targeted fat gain</div></div></div>
+    <div class="tip-card"><span class="tip-icon">💧</span><div><div class="tip-title">2.5–3L water daily</div><div class="tip-detail">Muscle recovery & skin clarity</div></div></div>
+    <div class="tip-card"><span class="tip-icon">🕐</span><div><div class="tip-title">Eat every 3–4 hours</div><div class="tip-detail">Small frequent meals for lean muscle gain</div></div></div>
+    <div class="tip-card"><span class="tip-icon">🌙</span><div><div class="tip-title">Protein before bed</div><div class="tip-detail">Milk, curd or paneer — overnight muscle repair</div></div></div>
+  </div>
+
+  <div class="desi-box">
+    <div class="dlabel">🍛 DESI-FRIENDLY SOURCES</div>
+    <p><strong>Protein:</strong> Paneer, dal, rajma, chole, eggs, dahi, soya chunks<br/>
+    <strong>Carbs:</strong> Roti, rice, poha, oats, banana<br/>
+    <strong>Fats:</strong> Desi ghee, groundnuts, almond, til</p>
+  </div>
+</div>
+
+<!-- PROGRESS PANEL -->
+<div id="panel-progress" class="panel">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+    <div>
+      <h2 style="font-size:20px;font-weight:300;margin-bottom:3px;">Daily Tracker</h2>
+      <p id="todayDate" style="font-size:11px;color:#4a4a4a;font-family:var(--font-mono);"></p>
+    </div>
+  </div>
+
+  <div class="log-card">
+    <div class="section-label" style="color:var(--purple);margin-bottom:14px;">TODAY'S LOG</div>
+
+    <!-- Workout toggle -->
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">Workout completed?</div>
+        <div class="toggle-sub">Mark your session done</div>
+      </div>
+      <div class="toggle-switch" id="workoutToggle" onclick="toggleWorkout()">
+        <div class="toggle-knob"></div>
+      </div>
+    </div>
+
+    <!-- Water -->
+    <div class="field-label">💧 Water intake (glasses)</div>
+    <div class="btn-group" id="waterBtns">
+      <button class="btn-opt" data-val="4" onclick="selectOpt('water',this)" style="border-color:var(--blue)30;">4</button>
+      <button class="btn-opt" data-val="6" onclick="selectOpt('water',this)" style="border-color:var(--blue)30;">6</button>
+      <button class="btn-opt" data-val="8" onclick="selectOpt('water',this)" style="border-color:var(--blue)30;">8</button>
+      <button class="btn-opt" data-val="10" onclick="selectOpt('water',this)" style="border-color:var(--blue)30;">10</button>
+      <button class="btn-opt" data-val="12" onclick="selectOpt('water',this)" style="border-color:var(--blue)30;">12</button>
+    </div>
+
+    <!-- Protein -->
+    <div class="field-label">🥩 Estimated protein (g)</div>
+    <div class="btn-group" id="proteinBtns">
+      <button class="btn-opt" data-val="40" onclick="selectOpt('protein',this)" style="border-color:var(--red)30;">40</button>
+      <button class="btn-opt" data-val="60" onclick="selectOpt('protein',this)" style="border-color:var(--red)30;">60</button>
+      <button class="btn-opt" data-val="80" onclick="selectOpt('protein',this)" style="border-color:var(--red)30;">80</button>
+      <button class="btn-opt" data-val="100" onclick="selectOpt('protein',this)" style="border-color:var(--red)30;">100</button>
+      <button class="btn-opt" data-val="110" onclick="selectOpt('protein',this)" style="border-color:var(--red)30;">100+</button>
+    </div>
+
+    <!-- Measurements -->
+    <div class="field-label">📏 Body measurements (cm) — optional</div>
+    <div class="meas-grid">
+      <div class="meas-item">
+        <div class="meas-lbl">💪 Arms</div>
+        <input class="meas-input" id="inp-arms" type="number" placeholder="—" style="border-color:#f4a26138;"/>
+      </div>
+      <div class="meas-item">
+        <div class="meas-lbl">⌛ Waist</div>
+        <input class="meas-input" id="inp-waist" type="number" placeholder="—" style="border-color:#2d6a4f38;"/>
+      </div>
+      <div class="meas-item">
+        <div class="meas-lbl">🍑 Glutes</div>
+        <input class="meas-input" id="inp-glutes" type="number" placeholder="—" style="border-color:#e76f5138;"/>
+      </div>
+    </div>
+
+    <button class="save-btn" id="saveBtn" onclick="saveLog()">Save Today's Log</button>
+  </div>
+
+  <!-- Charts area -->
+  <div id="chartsArea"></div>
+  <div id="emptyState" class="empty-state" style="display:none;">
+    <div class="emo">📊</div>
+    <div class="etitle">No data yet</div>
+    <div class="esub">Log your first day above to start tracking!</div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const PLAN = [
+  {
+    day:"DAY 1", focus:"Chest & Triceps", tag:"PUSH", color:"#f4a261",
+    warmup:"5 min — Arm swings, shoulder rolls, cat-cow stretch",
+    cooldown:"5 min — Chest doorway stretch, tricep overhead stretch",
+    emoji:"💪",
+    exercises:[
+      {name:"Wall Push-Ups", sets:3, reps:"15", tip:"Chest opener — perfect form starter"},
+      {name:"Knee Push-Ups", sets:3, reps:"12", tip:"Builds chest thickness"},
+      {name:"Wide Grip Push-Ups", sets:3, reps:"10", tip:"Targets outer chest & fullness"},
+      {name:"Diamond Push-Ups", sets:3, reps:"8", tip:"Defines triceps & inner arms"},
+      {name:"Pike Push-Ups", sets:3, reps:"10", tip:"Shoulders + upper arm strength"},
+      {name:"Chest Squeeze Hold", sets:3, reps:"15 sec", tip:"Activates inner chest"},
+    ]
+  },
+  {
+    day:"DAY 2", focus:"Glutes & Hips", tag:"LOWER", color:"#e76f51",
+    warmup:"5 min — Hip circles, leg swings, glute activation march",
+    cooldown:"5 min — Pigeon pose, hip flexor stretch, figure-4 stretch",
+    emoji:"🍑",
+    exercises:[
+      {name:"Glute Bridges", sets:4, reps:"20", tip:"Primary glute builder — squeeze at top"},
+      {name:"Single-Leg Glute Bridge", sets:3, reps:"12 each", tip:"Corrects imbalances"},
+      {name:"Donkey Kicks", sets:3, reps:"15 each", tip:"Upper glute shape"},
+      {name:"Fire Hydrants", sets:3, reps:"15 each", tip:"Outer glute & hip width"},
+      {name:"Glute Bridge Pulses", sets:3, reps:"25", tip:"Burnout finisher"},
+      {name:"Standing Calf Raises", sets:3, reps:"20", tip:"Lower leg definition"},
+    ]
+  },
+  {
+    day:"DAY 3", focus:"Back & Biceps", tag:"PULL", color:"#457b9d",
+    warmup:"5 min — Shoulder rolls, towel pull-aparts, neck rolls",
+    cooldown:"5 min — Child's pose, lat side stretch, bicep wall stretch",
+    emoji:"🔙",
+    exercises:[
+      {name:"Superman Holds", sets:3, reps:"12", tip:"Posterior chain — posture essential"},
+      {name:"Reverse Snow Angels", sets:3, reps:"12", tip:"Upper back width"},
+      {name:"Door Frame Rows", sets:3, reps:"12", tip:"Best bodyweight bicep & back pull"},
+      {name:"Towel Isometric Bicep Curls", sets:3, reps:"10 each", tip:"Creates arm definition"},
+      {name:"Prone Y-T-W", sets:2, reps:"8 each", tip:"Posture muscles & shoulder health"},
+      {name:"Plank to Down Dog", sets:3, reps:"10", tip:"Core + lat stretch combo"},
+    ]
+  },
+  {
+    day:"DAY 4", focus:"Active Recovery", tag:"REST", color:"#2d6a4f",
+    warmup:null, cooldown:null, emoji:"🌿",
+    exercises:[
+      {name:"15-min Brisk Walk", sets:1, reps:"15 min", tip:"Keeps waist lean, boosts metabolism"},
+      {name:"Full Body Static Stretch", sets:1, reps:"10 min", tip:"Hold each 30–40 sec"},
+      {name:"Belly Breathing", sets:1, reps:"5 min", tip:"Lowers cortisol — important for lean waist"},
+      {name:"Self-Massage / Foam Roll", sets:1, reps:"5 min", tip:"Glutes, back, calves"},
+    ]
+  },
+  {
+    day:"DAY 5", focus:"Arms & Glutes Combo", tag:"COMBO", color:"#9b2226",
+    warmup:"5 min — High knees, arm circles, hip openers",
+    cooldown:"5 min — Seated glute stretch, arm cross-body stretch",
+    emoji:"🔥",
+    exercises:[
+      {name:"Push-Up to T-Rotation", sets:3, reps:"8", tip:"Chest + oblique — keeps waist tight"},
+      {name:"Tricep Dips (chair)", sets:3, reps:"12", tip:"Best for arm definition at home"},
+      {name:"Curtsy Squats", sets:3, reps:"12 each", tip:"Glute + inner thigh, knee-friendly"},
+      {name:"Pulse Squats", sets:3, reps:"20", tip:"Glute endurance — no knee strain"},
+      {name:"Narrow Push-Ups", sets:3, reps:"10", tip:"Chest inner fullness + arms"},
+      {name:"Single-Leg Hip Thrust", sets:3, reps:"15 each", tip:"Glute peak builder"},
+    ]
+  },
+  {
+    day:"DAY 6", focus:"Full Body Strength", tag:"FULL", color:"#6d3a9c",
+    warmup:"5 min — Jumping jacks, inchworm, world's greatest stretch",
+    cooldown:"5 min — Full body flow: forward fold, hip flexor, chest open",
+    emoji:"⚡",
+    exercises:[
+      {name:"Push-Up Variations Circuit", sets:3, reps:"10", tip:"Wide → narrow → pike in one set"},
+      {name:"Glute Bridge to March", sets:3, reps:"12", tip:"Core + glute stability"},
+      {name:"Bear Crawl (in place)", sets:3, reps:"30 sec", tip:"Full body + shoulder stability"},
+      {name:"Step-Ups (stair/chair)", sets:3, reps:"10 each", tip:"Glute + quad — knee-safe"},
+      {name:"Plank Hold", sets:3, reps:"30 sec", tip:"Core without crunches — protects waist"},
+      {name:"Wall Sit", sets:3, reps:"30 sec", tip:"Leg endurance, no knee impact"},
+    ]
+  }
+];
+
+// ─── STATE ────────────────────────────────────────────────────────────────
+let activeDay = 0;
+let checked   = JSON.parse(localStorage.getItem('bo_checked') || '{}');
+let logs      = JSON.parse(localStorage.getItem('bo_logs')    || '{}');
+let form      = { workoutDone:false, water:'', protein:'', arms:'', waist:'', glutes:'' };
+
+const TODAY = new Date().toISOString().split('T')[0];
+
+function save(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch{} }
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderDayScroller();
+  renderDay();
+  updateStreak();
+  document.getElementById('todayDate').textContent =
+    new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+});
+
+// ─── TABS ────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (tab === 'progress') { prefillForm(); renderCharts(); }
+}
+
+// ─── DAY SCROLLER ────────────────────────────────────────────────────────
+function renderDayScroller() {
+  const scroller = document.getElementById('dayScroller');
+  scroller.innerHTML = PLAN.map((d,i) => {
+    const done = isDayDone(i);
+    return `<button class="day-pill${i===activeDay?' active':''}" 
+      style="--pill-color:${d.color}" onclick="selectDay(${i})">
+      <div class="day-num">${d.day}</div>
+      <div class="day-tag">${d.tag}</div>
+      ${done ? `<div class="done-label">✓ done</div>` : ''}
+    </button>`;
+  }).join('');
+}
+
+function isDayDone(di) {
+  return PLAN[di].exercises.every((_,ei) => checked[`${di}-${ei}`]);
+}
+
+function selectDay(i) {
+  activeDay = i;
+  renderDayScroller();
+  renderDay();
+}
+
+// ─── DAY CONTENT ─────────────────────────────────────────────────────────
+function renderDay() {
+  const d = PLAN[activeDay];
+  const col = d.color;
+  let html = `
+  <div style="padding:10px 0 0;">
+    <div class="day-card" style="background:linear-gradient(140deg,${col}1a,#121212);border-color:${col}2e;">
+      <div class="day-card-top">
+        <div>
+          <span class="tag-badge" style="background:${col}">${d.tag}</span>
+          <h2>${d.focus}</h2>
+          <p class="sub">${d.day} · 45 min</p>
+        </div>
+        <span class="emoji">${d.emoji}</span>
+      </div>
+      ${d.warmup ? `
+      <div class="warmup-box" style="border-left-color:${col}">
+        <div class="wlabel" style="color:${col}">WARM-UP</div>
+        <p>${d.warmup}</p>
+      </div>` : ''}
+    </div>
+
+    <div class="exercises">
+      ${d.exercises.map((ex,i) => {
+        const done = !!checked[`${activeDay}-${i}`];
+        return `
+        <div class="ex-card${done?' done':''}" 
+          style="${done?`background:${col}14;border-color:${col}3a;`:''}"
+          onclick="toggleEx(${activeDay},${i})">
+          <div class="ex-card-left">
+            <div class="ex-card-row">
+              <div class="check-circle${done?' checked':''}" 
+                style="${done?`background:${col};`:`border-color:#333;`}">
+                ${done ? '✓' : `<span style="color:#3a3a3a;font-size:9px;">${i+1}</span>`}
+              </div>
+              <span class="ex-name">${ex.name}</span>
+            </div>
+            <div class="ex-tip">${ex.tip}</div>
+          </div>
+          <div class="ex-meta">
+            <div class="ex-sets" style="color:${col}">${ex.sets}×</div>
+            <div class="ex-reps">${ex.reps}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    ${d.cooldown ? `
+    <div class="cooldown-box">
+      <div class="clabel">COOL-DOWN</div>
+      <p>${d.cooldown}</p>
+    </div>` : ''}
+  </div>`;
+  document.getElementById('dayContent').innerHTML = html;
+}
+
+function toggleEx(di, ei) {
+  const k = `${di}-${ei}`;
+  checked[k] = !checked[k];
+  save('bo_checked', checked);
+  renderDayScroller();
+  renderDay();
+}
+
+// ─── STREAK ─────────────────────────────────────────────────────────────
+function updateStreak() {
+  let s = 0, d = new Date();
+  while(true) {
+    const key = d.toISOString().split('T')[0];
+    if(logs[key]?.workoutDone){ s++; d.setDate(d.getDate()-1); } else break;
+  }
+  document.getElementById('streakLabel').textContent = `${s}d streak`;
+}
+
+// ─── PROGRESS FORM ────────────────────────────────────────────────────────
+function prefillForm() {
+  const log = logs[TODAY] || {};
+  form = { workoutDone:false, water:'', protein:'', arms:'', waist:'', glutes:'', ...log };
+
+  // toggle
+  const tog = document.getElementById('workoutToggle');
+  tog.classList.toggle('on', !!form.workoutDone);
+
+  // water buttons
+  document.querySelectorAll('#waterBtns .btn-opt').forEach(btn => {
+    const sel = btn.dataset.val === String(form.water);
+    btn.classList.toggle('sel', sel);
+    btn.style.background = sel ? '#457b9d' : '#181818';
+    btn.style.borderColor = sel ? '#457b9d' : '#457b9d30';
+    btn.style.color = sel ? '#fff' : '#444';
+  });
+
+  // protein buttons
+  document.querySelectorAll('#proteinBtns .btn-opt').forEach(btn => {
+    const sel = btn.dataset.val === String(form.protein);
+    btn.classList.toggle('sel', sel);
+    btn.style.background = sel ? '#e76f51' : '#181818';
+    btn.style.borderColor = sel ? '#e76f51' : '#e76f5130';
+    btn.style.color = sel ? '#fff' : '#444';
+  });
+
+  // measurements
+  document.getElementById('inp-arms').value = form.arms || '';
+  document.getElementById('inp-waist').value = form.waist || '';
+  document.getElementById('inp-glutes').value = form.glutes || '';
+}
+
+function toggleWorkout() {
+  form.workoutDone = !form.workoutDone;
+  document.getElementById('workoutToggle').classList.toggle('on', form.workoutDone);
+}
+
+function selectOpt(field, btn) {
+  const val = btn.dataset.val;
+  form[field] = val;
+  const isWater = field === 'water';
+  const selColor = isWater ? '#457b9d' : '#e76f51';
+  const borderOff = isWater ? '#457b9d30' : '#e76f5130';
+  const groupId = isWater ? 'waterBtns' : 'proteinBtns';
+  document.querySelectorAll(`#${groupId} .btn-opt`).forEach(b => {
+    const sel = b.dataset.val === val;
+    b.classList.toggle('sel', sel);
+    b.style.background = sel ? selColor : '#181818';
+    b.style.borderColor = sel ? selColor : borderOff;
+    b.style.color = sel ? '#fff' : '#444';
+  });
+}
+
+function saveLog() {
+  form.arms   = document.getElementById('inp-arms').value;
+  form.waist  = document.getElementById('inp-waist').value;
+  form.glutes = document.getElementById('inp-glutes').value;
+  logs[TODAY] = { ...form, date: TODAY };
+  save('bo_logs', logs);
+  updateStreak();
+
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = '✓  Saved!';
+  btn.classList.add('saved');
+  setTimeout(() => { btn.textContent = 'Save Today\'s Log'; btn.classList.remove('saved'); }, 2200);
+
+  renderCharts();
+}
+
+// ─── CHARTS ───────────────────────────────────────────────────────────────
+let charts = {};
+
+function renderCharts() {
+  const logArr = Object.values(logs).sort((a,b) => a.date > b.date ? 1 : -1);
+  const area = document.getElementById('chartsArea');
+  const empty = document.getElementById('emptyState');
+
+  if (!logArr.length) { area.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+
+  area.innerHTML = `
+    <div class="chart-card">
+      <div class="section-label" style="color:#457b9d;margin-bottom:10px;">💧 WATER INTAKE</div>
+      <canvas id="chartWater" height="100"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="section-label" style="color:#e76f51;margin-bottom:10px;">🥩 PROTEIN INTAKE</div>
+      <canvas id="chartProtein" height="100"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="section-label" style="color:#888;margin-bottom:10px;">📏 BODY MEASUREMENTS (cm)</div>
+      <canvas id="chartMeas" height="120"></canvas>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#f4a261"></div>💪 Arms</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2d6a4f"></div>⌛ Waist</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#e76f51"></div>🍑 Glutes</div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="section-label" style="color:#9b59b6;margin-bottom:12px;">🔥 WORKOUT HISTORY</div>
+      <div class="history-grid" id="historyGrid"></div>
+    </div>
+  `;
+
+  const labels = logArr.map(d => {
+    const dt = new Date(d.date + 'T00:00:00');
+    return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+  });
+
+  const chartDefaults = {
+    responsive: true,
+    plugins: { legend:{ display:false }, tooltip:{ backgroundColor:'#1c1c1c', borderColor:'#333', borderWidth:1, titleColor:'#888', bodyColor:'#f0ece4', bodyFont:{family:'DM Mono'}, titleFont:{family:'DM Mono'} } },
+    scales: {
+      x: { ticks:{ color:'#444', font:{size:10,family:'DM Mono'} }, grid:{ color:'#1a1a1a' } },
+      y: { ticks:{ color:'#444', font:{size:10,family:'DM Mono'} }, grid:{ color:'#1a1a1a' } }
+    }
+  };
+
+  // Water chart
+  destroyChart('chartWater');
+  charts['chartWater'] = new Chart(document.getElementById('chartWater'), {
+    type:'line',
+    data:{
+      labels,
+      datasets:[{ data: logArr.map(d => d.water !== '' ? Number(d.water) : null),
+        borderColor:'#457b9d', backgroundColor:'#457b9d22', borderWidth:2,
+        pointBackgroundColor:'#457b9d', pointRadius:4, tension:0.3, spanGaps:true }]
+    },
+    options:{ ...chartDefaults, plugins:{ ...chartDefaults.plugins, tooltip:{ ...chartDefaults.plugins.tooltip, callbacks:{ label: ctx => ctx.parsed.y + ' glasses' } } } }
+  });
+
+  // Protein chart
+  destroyChart('chartProtein');
+  charts['chartProtein'] = new Chart(document.getElementById('chartProtein'), {
+    type:'line',
+    data:{
+      labels,
+      datasets:[{ data: logArr.map(d => d.protein !== '' ? Number(d.protein) : null),
+        borderColor:'#e76f51', backgroundColor:'#e76f5122', borderWidth:2,
+        pointBackgroundColor:'#e76f51', pointRadius:4, tension:0.3, spanGaps:true }]
+    },
+    options:{ ...chartDefaults, plugins:{ ...chartDefaults.plugins, tooltip:{ ...chartDefaults.plugins.tooltip, callbacks:{ label: ctx => ctx.parsed.y + 'g' } } } }
+  });
+
+  // Measurements chart
+  destroyChart('chartMeas');
+  charts['chartMeas'] = new Chart(document.getElementById('chartMeas'), {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        { label:'Arms', data: logArr.map(d => d.arms ? Number(d.arms) : null), borderColor:'#f4a261', backgroundColor:'transparent', borderWidth:2, pointBackgroundColor:'#f4a261', pointRadius:4, tension:0.3, spanGaps:true },
+        { label:'Waist', data: logArr.map(d => d.waist ? Number(d.waist) : null), borderColor:'#2d6a4f', backgroundColor:'transparent', borderWidth:2, pointBackgroundColor:'#2d6a4f', pointRadius:4, tension:0.3, spanGaps:true },
+        { label:'Glutes', data: logArr.map(d => d.glutes ? Number(d.glutes) : null), borderColor:'#e76f51', backgroundColor:'transparent', borderWidth:2, pointBackgroundColor:'#e76f51', pointRadius:4, tension:0.3, spanGaps:true },
+      ]
+    },
+    options:{ ...chartDefaults, plugins:{ ...chartDefaults.plugins, legend:{ display:false }, tooltip:{ ...chartDefaults.plugins.tooltip, callbacks:{ label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' cm' } } } }
+  });
+
+  // History dots
+  const grid = document.getElementById('historyGrid');
+  grid.innerHTML = Object.entries(logs).sort(([a],[b]) => a < b ? 1 : -1).slice(0,21).map(([date,log]) => {
+    const dt = new Date(date+'T00:00:00');
+    const label = dt.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    return `<div class="history-dot${log.workoutDone?' done':''}">${log.workoutDone?'✓':'✗'} ${label}</div>`;
+  }).join('');
+}
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+</script>
+</body>
+</html>
